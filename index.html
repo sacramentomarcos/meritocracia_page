@@ -177,6 +177,20 @@ padding:12px;
     background: #c62828;
 }
 
+/* Ícone genérico para documentos (PDF, Excel, Word) */
+.preview-item .file-icon {
+    font-size: 42px;
+    height: 100px;
+    width: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border: 1px solid #eee;
+    user-select: none;
+}
+
 .extra input[type=file]{
 
 margin-top:10px;
@@ -370,10 +384,11 @@ background:#5d35a4;
                         <label><b>Justificativa *</b></label>
                         <textarea placeholder="Explique o motivo ou cole o print diretamente aqui..."></textarea>
 
-                        <label><b>Anexo / Prints *</b></label>
+                        <label><b>Anexo / Prints / Documentos *</b></label>
                         <div class="upload-area" tabindex="0">
-                            <p>📋 <b>Clique aqui para selecionar</b> ou pressione <b>Ctrl + V</b> para colar seus prints (pode colar mais de um)</p>
-                            <input type="file" class="input-file" accept="image/*" multiple style="display:none;">
+                            <p>📋 <b>Clique aqui para selecionar</b> ou pressione <b>Ctrl + V</b> para colar prints</p>
+                            <p style="font-size: 12px; color: #777; margin-top: 4px;">Aceita Imagens, PDF, Excel (.xlsx, .xls, .csv) e Word (.doc, .docx)</p>
+                            <input type="file" class="input-file" accept="image/*, .pdf, .doc, .docx, .xls, .xlsx, .csv" multiple style="display:none;">
                             <div class="preview-container"></div>
                         </div>
                     </div>
@@ -412,32 +427,60 @@ background:#5d35a4;
                     const itemDiv = document.createElement("div");
                     itemDiv.className = "preview-item";
 
-                    const img = document.createElement("img");
-                    const reader = new FileReader();
-                    reader.onload = (e) => { img.src = e.target.result; };
-                    reader.readAsDataURL(file);
+                    const isImage = file.type.startsWith("image/");
+
+                    if (isImage) {
+                        // Exibe a imagem normalmente
+                        const img = document.createElement("img");
+                        const reader = new FileReader();
+                        reader.onload = (e) => { img.src = e.target.result; };
+                        reader.readAsDataURL(file);
+                        itemDiv.appendChild(img);
+                    } else {
+                        // Exibe o ícone correspondente ao tipo de documento
+                        const iconDiv = document.createElement("div");
+                        iconDiv.className = "file-icon";
+
+                        const ext = (file.name || "").split('.').pop().toLowerCase();
+
+                        if (['xlsx', 'xls', 'csv'].includes(ext)) {
+                            iconDiv.innerHTML = "📊"; // Ícone de Planilha / Excel
+                            iconDiv.title = "Planilha Excel";
+                        } else if (['doc', 'docx'].includes(ext)) {
+                            iconDiv.innerHTML = "📝"; // Ícone de Documento Word
+                            iconDiv.title = "Documento Word";
+                        } else if (ext === 'pdf') {
+                            iconDiv.innerHTML = "📕"; // Ícone de PDF
+                            iconDiv.title = "Arquivo PDF";
+                        } else {
+                            iconDiv.innerHTML = "📄"; // Ícone Genérico
+                        }
+
+                        itemDiv.appendChild(iconDiv);
+                    }
 
                     const nameSpan = document.createElement("span");
                     nameSpan.className = "file-name";
-                    nameSpan.innerText = file.name || `print_${index + 1}.png`;
+                    nameSpan.innerText = file.name || `arquivo_${index + 1}`;
 
-                    // Botão X abaixo do print
+                    // Botão X para remover
                     const btnRemove = document.createElement("button");
                     btnRemove.className = "btn-remove";
                     btnRemove.type = "button";
                     btnRemove.innerHTML = "✖ Remover";
                     btnRemove.onclick = (e) => {
-                        e.stopPropagation(); // Impede o clique de abrir a janela de upload
+                        e.stopPropagation();
                         listaArquivos.splice(index, 1);
                         atualizarArquivosEPreview();
                     };
 
-                    itemDiv.appendChild(img);
                     itemDiv.appendChild(nameSpan);
                     itemDiv.appendChild(btnRemove);
                     previewContainer.appendChild(itemDiv);
                 });
-                    }
+            }
+
+        
 
         function adicionarArquivos(novosArquivos) {
             Array.from(novosArquivos).forEach(file => {
@@ -525,6 +568,24 @@ background:#5d35a4;
             document.getElementById("lista").innerHTML = "";
             mostrarTela("screenSelect");
         }
+
+    // Converte um objeto File do navegador para Base64
+    function arquivoParaBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            // Separa o cabeçalho "data:image/png;base64," para manter apenas o conteúdo puro em base64
+            const base64Content = reader.result.split(',')[1];
+            resolve({
+                name: file.name,
+                type: file.type,
+                base64Content: base64Content
+            });
+        };
+        reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
+    });
+}
     </script>
 
 </body>

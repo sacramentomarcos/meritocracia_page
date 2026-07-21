@@ -424,7 +424,7 @@ function enviar(){
 
         const radio=document.querySelector(`input[name="empresa${i}"]:checked`);
 
-        if(!radio){
+        if (!radio){
 
             alert("Responda todas as empresas.");
 
@@ -438,17 +438,17 @@ function enviar(){
 
         const arquivoInput=company.querySelector("input[type=file]").files[0];
 
-        const arquivo = arquivoInput.files[0];
+        const arquivo = arquivoInput ? "TEM ARQUIVO" : "";
 
         // Se respondeu NÃO, precisa justificar OU anexar um arquivo
-        if (radio.value === "NAO" && texto === "" && !arquivo) {
+        if (radio.value === "NAO" && texto === "" || radio.value === "NAO"  && !arquivo) {
 
             alert(
                 `A empresa "${empresa}" foi marcada como NÃO.\n\n` +
                 "É obrigatório informar uma justificativa ou anexar um arquivo."
             );
 
-            return;
+            throw "";
 
         }
 

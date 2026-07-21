@@ -382,71 +382,103 @@ background:#5d35a4;
                 lista.appendChild(div);
 
                 const radios = div.querySelectorAll("input[type=radio]");
-                const extra = div.querySelector(".extra");
-                const uploadArea = div.querySelector(".upload-area");
-                const fileInput = div.querySelector(".input-file");
-                const previewContainer = div.querySelector(".preview-container");
-                const previewImg = previewContainer.querySelector("img");
-                const fileNameSpan = previewContainer.querySelector(".file-name");
+            const extra = div.querySelector(".extra");
+            const uploadArea = div.querySelector(".upload-area");
+            const fileInput = div.querySelector(".input-file");
+            const previewContainer = div.querySelector(".preview-container");
 
-                // Alterna visibilidade da seção extra
-                radios.forEach(r => {
-                    r.addEventListener("change", () => {
-                        extra.style.display = r.value === "NAO" ? "block" : "none";
-                    });
+            // Lista para manter os arquivos anexados desta empresa
+            let listaArquivos = [];
+
+            radios.forEach(r => {
+                r.addEventListener("change", () => {
+                    extra.style.display = r.value === "NAO" ? "block" : "none";
                 });
+            });
 
-                // Função auxiliar para atribuir o arquivo ao input[type=file] e exibir preview
-                function processarArquivo(file) {
-                    if (!file) return;
+            // Atualiza o <input type="file"> nativo com os arquivos da lista e renderiza na tela
+            function atualizarArquivosEPreview() {
+                const dataTransfer = new DataTransfer();
+                listaArquivos.forEach(file => dataTransfer.items.add(file));
+                fileInput.files = dataTransfer.files;
 
-                    // Atribui o arquivo capturado ao input via DataTransfer
-                    const dataTransfer = new DataTransfer();
-                    dataTransfer.items.add(file);
-                    fileInput.files = dataTransfer.files;
+                renderizarPreviews();
+            }
 
-                    // Se for imagem, exibe preview
-                    if (file.type.startsWith("image/")) {
-                        const reader = new FileReader();
-                        reader.onload = (e) => {
-                            previewImg.src = e.target.result;
-                            previewContainer.style.display = "flex";
-                            fileNameSpan.innerText = file.name || "imagem_colada.png";
-                        };
-                        reader.readAsDataURL(file);
-                    } else {
-                        previewImg.src = "";
-                        previewContainer.style.display = "flex";
-                        fileNameSpan.innerText = file.name;
+            function renderizarPreviews() {
+                previewContainer.innerHTML = "";
+
+                listaArquivos.forEach((file, index) => {
+                    const itemDiv = document.createElement("div");
+                    itemDiv.className = "preview-item";
+
+                    const img = document.createElement("img");
+                    const reader = new FileReader();
+                    reader.onload = (e) => { img.src = e.target.result; };
+                    reader.readAsDataURL(file);
+
+                    const nameSpan = document.createElement("span");
+                    nameSpan.className = "file-name";
+                    nameSpan.innerText = file.name || `print_${index + 1}.png`;
+
+                    // Botão X abaixo do print
+                    const btnRemove = document.createElement("button");
+                    btnRemove.className = "btn-remove";
+                    btnRemove.type = "button";
+                    btnRemove.innerHTML = "✖ Remover";
+                    btnRemove.onclick = (e) => {
+                        e.stopPropagation(); // Impede o clique de abrir a janela de upload
+                        listaArquivos.splice(index, 1);
+                        atualizarArquivosEPreview();
+                    };
+
+                    itemDiv.appendChild(img);
+                    itemDiv.appendChild(nameSpan);
+                    itemDiv.appendChild(btnRemove);
+                    previewContainer.appendChild(itemDiv);
+                });
                     }
+
+        function adicionarArquivos(novosArquivos) {
+            Array.from(novosArquivos).forEach(file => {
+                // Renomeia prints colados do clipboard para não ficarem com nomes duplicados (ex: image.png)
+                if (!file.name || file.name === "image.png") {
+                    const novofile = new File([file], `print_${Date.now()}_${listaArquivos.length + 1}.png`, { type: file.type });
+                    listaArquivos.push(novofile);
+                } else {
+                    listaArquivos.push(file);
                 }
+            });
+            atualizarArquivosEPreview();
+        }
 
-                // Evento 1: Clique na caixa abre a janela de seleção
-                uploadArea.addEventListener("click", (e) => {
-                    // Evita disparar se clicar na própria imagem
-                    if (e.target.tagName !== "IMG") {
-                        fileInput.click();
-                    }
-                });
+        // Clique na área abre o seletor de arquivos
+        uploadArea.addEventListener("click", (e) => {
+            fileInput.click();
+        });
 
-                // Evento 2: Mudança via seleção tradicional do input
-                fileInput.addEventListener("change", () => {
-                    if (fileInput.files.length > 0) {
-                        processarArquivo(fileInput.files[0]);
-                    }
-                });
+        // Anexo via janela de arquivos
+        fileInput.addEventListener("change", () => {
+            if (fileInput.files.length > 0) {
+                adicionarArquivos(fileInput.files);
+            }
+        });
 
-                // Evento 3: Ctrl+V na área extra (seja no textarea ou na caixa de upload)
-                extra.addEventListener("paste", (e) => {
-                    const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-                    for (let item of items) {
-                        if (item.type.indexOf("image") === 0) {
-                            const file = item.getAsFile();
-                            processarArquivo(file);
-                            break;
-                        }
-                    }
-                });
+        // Anexo via Ctrl + V
+        extra.addEventListener("paste", (e) => {
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            const imagensEncontradas = [];
+
+            for (let item of items) {
+                if (item.type.indexOf("image") === 0) {
+                    imagensEncontradas.push(item.getAsFile());
+                }
+            }
+
+            if (imagensEncontradas.length > 0) {
+                adicionarArquivos(imagensEncontradas);
+            }
+        });
             });
         }
 
@@ -464,13 +496,14 @@ background:#5d35a4;
 
                 const company = document.querySelectorAll(".company")[i];
                 const texto = company.querySelector("textarea").value;
-                const fileInput = company.querySelector(".input-file");
-                const arquivo = fileInput.files[0];
+                const arquivosInput = company.querySelector(".input-file");
+                const arquivos = Array.from(arquivosInput.files);
 
-                if (radio.value === "NAO" && texto === "" && !arquivo) {
+                // Se respondeu NÃO, precisa de justificativa OU pelo menos 1 print anexado
+                if (radio.value === "NAO" && texto === "" && arquivos.length === 0) {
                     alert(
                         `A empresa "${empresa}" foi marcada como NÃO.\n\n` +
-                        "É obrigatório informar uma justificativa ou anexar/colar um arquivo."
+                        "É obrigatório informar uma justificativa ou anexar/colar ao menos um print."
                     );
                     return;
                 }
@@ -479,7 +512,7 @@ background:#5d35a4;
                     empresa,
                     status: radio.value,
                     justificativa: texto,
-                    arquivo
+                    arquivos // Agora envia o array com todos os prints capturados
                 });
             }
 

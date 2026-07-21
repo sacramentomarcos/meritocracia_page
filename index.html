@@ -109,6 +109,74 @@ padding:12px;
 
 }
 
+/* Área customizada para Cole / Upload */
+        .upload-area {
+            margin-top: 10px;
+            border: 2px dashed #673ab7;
+            background: #fff;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+/* Container que abriga os múltiplos prints lado a lado */
+.preview-container {
+    margin-top: 15px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+}
+
+.preview-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #fff;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    max-width: 100%; /* Garante que não ultrapasse a largura do container */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+/* Restringe a imagem para que se limite às bordas e não estoure */
+.preview-item img {
+    max-width: 100%;
+    max-height: 180px; /* Limita a altura mantendo a proporção */
+    object-fit: contain;
+    border-radius: 4px;
+}
+.preview-item .file-name {
+    font-size: 12px;
+    color: #555;
+    margin-top: 6px;
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Botão X para remover um print específico */
+.btn-remove {
+    margin-top: 8px;
+    background: #e53935;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.btn-remove:hover {
+    background: #c62828;
+}
+
 .extra input[type=file]{
 
 margin-top:10px;
@@ -255,250 +323,176 @@ background:#5d35a4;
 
 </div>
 <script>
-const empresas = [
-
-"002 - VIAÇÃO VIÇOSA LTDA",
-
-"003 - COLETIVOS RIO BRANCO",
-
-"004 - VIAÇÃO UBÁ",
-
-"009 - SV TRANSPORTES LTDA",
-
-"011 - EXPRESSO TRÊS FRONTEIRAS",
-
-"012 - EXPRESSO PLANALTO LTDA",
-
-"015 - SV TRANSPORTES",
-
-"022 - SV TRANSPORTES LAFAIETE",
-
-"027 - ANSAL"
-
-];
-
-
-//=========================================
-// Navegação
-//=========================================
-
-function mostrarTela(id){
-
-    document
-        .querySelectorAll(".screen")
-        .forEach(t=>t.style.display="none");
-
-    document
-        .getElementById(id)
-        .style.display="block";
-
-}
-
-
-//=========================================
-// Tela 1
-//=========================================
-
-function continuar(){
-
-    const rotina=document.getElementById("rotina").value;
-
-    if(rotina===""){
-
-        alert("Selecione uma rotina.");
-
-        return;
-
-    }
-
-    document.getElementById("tituloRotina").innerText=rotina;
-
-    construirFormulario();
-
-    mostrarTela("screenForm");
-
-}
-
-
-
-//=========================================
-// Construção dinâmica
-//=========================================
-
-function construirFormulario(){
-
-    const lista=document.getElementById("lista");
-
-    lista.innerHTML="";
-
-    empresas.forEach((empresa,i)=>{
-
-        const div=document.createElement("div");
-
-        div.className="company";
-
-        div.innerHTML=`
-
-        <div class="company-line">
-
-            <div>${empresa}</div>
-
-            <div>
-
-                <input
-                    type="radio"
-                    name="empresa${i}"
-                    value="SIM">
-
-            </div>
-
-            <div>
-
-                <input
-                    type="radio"
-                    name="empresa${i}"
-                    value="NAO">
-
-            </div>
-
-        </div>
-
-        <div class="extra">
-
-            <label>
-
-                <b>Justificativa *</b>
-
-            </label>
-
-            <textarea
-                placeholder="Explique o motivo..."></textarea>
-
-            <label>
-
-                <b>Anexo *</b>
-
-            </label>
-
-            <input
-                type="file">
-
-        </div>
-
-        `;
-
-        lista.appendChild(div);
-
-        const radios=div.querySelectorAll("input[type=radio]");
-
-        const extra=div.querySelector(".extra");
-
-        radios.forEach(r=>{
-
-            r.addEventListener("change",()=>{
-
-                extra.style.display=
-                    r.value==="NAO"
-                    ? "block"
-                    : "none";
-
+        const empresas = [
+            "002 - VIAÇÃO VIÇOSA LTDA",
+            "003 - COLETIVOS RIO BRANCO",
+            "004 - VIAÇÃO UBÁ",
+            "009 - SV TRANSPORTES LTDA",
+            "011 - EXPRESSO TRÊS FRONTEIRAS",
+            "012 - EXPRESSO PLANALTO LTDA",
+            "015 - SV TRANSPORTES",
+            "022 - SV TRANSPORTES LAFAIETE",
+            "027 - ANSAL"
+        ];
+
+        function mostrarTela(id) {
+            document.querySelectorAll(".screen").forEach(t => t.style.display = "none");
+            document.getElementById(id).style.display = "block";
+        }
+
+        function continuar() {
+            const rotina = document.getElementById("rotina").value;
+            if (rotina === "") {
+                alert("Selecione uma rotina.");
+                return;
+            }
+            document.getElementById("tituloRotina").innerText = rotina;
+            construirFormulario();
+            mostrarTela("screenForm");
+        }
+
+        function construirFormulario() {
+            const lista = document.getElementById("lista");
+            lista.innerHTML = "";
+
+            empresas.forEach((empresa, i) => {
+                const div = document.createElement("div");
+                div.className = "company";
+
+                div.innerHTML = `
+                    <div class="company-line">
+                        <div>${empresa}</div>
+                        <div><input type="radio" name="empresa${i}" value="SIM"></div>
+                        <div><input type="radio" name="empresa${i}" value="NAO"></div>
+                    </div>
+
+                    <div class="extra">
+                        <label><b>Justificativa *</b></label>
+                        <textarea placeholder="Explique o motivo ou cole o print diretamente aqui..."></textarea>
+
+                        <label><b>Anexo / Prints *</b></label>
+                        <div class="upload-area" tabindex="0">
+                            <p>📋 <b>Clique aqui para selecionar</b> ou pressione <b>Ctrl + V</b> para colar seus prints (pode colar mais de um)</p>
+                            <input type="file" class="input-file" accept="image/*" multiple style="display:none;">
+                            <div class="preview-container"></div>
+                        </div>
+                    </div>
+                `;
+
+                lista.appendChild(div);
+
+                const radios = div.querySelectorAll("input[type=radio]");
+                const extra = div.querySelector(".extra");
+                const uploadArea = div.querySelector(".upload-area");
+                const fileInput = div.querySelector(".input-file");
+                const previewContainer = div.querySelector(".preview-container");
+                const previewImg = previewContainer.querySelector("img");
+                const fileNameSpan = previewContainer.querySelector(".file-name");
+
+                // Alterna visibilidade da seção extra
+                radios.forEach(r => {
+                    r.addEventListener("change", () => {
+                        extra.style.display = r.value === "NAO" ? "block" : "none";
+                    });
+                });
+
+                // Função auxiliar para atribuir o arquivo ao input[type=file] e exibir preview
+                function processarArquivo(file) {
+                    if (!file) return;
+
+                    // Atribui o arquivo capturado ao input via DataTransfer
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    fileInput.files = dataTransfer.files;
+
+                    // Se for imagem, exibe preview
+                    if (file.type.startsWith("image/")) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            previewImg.src = e.target.result;
+                            previewContainer.style.display = "flex";
+                            fileNameSpan.innerText = file.name || "imagem_colada.png";
+                        };
+                        reader.readAsDataURL(file);
+                    } else {
+                        previewImg.src = "";
+                        previewContainer.style.display = "flex";
+                        fileNameSpan.innerText = file.name;
+                    }
+                }
+
+                // Evento 1: Clique na caixa abre a janela de seleção
+                uploadArea.addEventListener("click", (e) => {
+                    // Evita disparar se clicar na própria imagem
+                    if (e.target.tagName !== "IMG") {
+                        fileInput.click();
+                    }
+                });
+
+                // Evento 2: Mudança via seleção tradicional do input
+                fileInput.addEventListener("change", () => {
+                    if (fileInput.files.length > 0) {
+                        processarArquivo(fileInput.files[0]);
+                    }
+                });
+
+                // Evento 3: Ctrl+V na área extra (seja no textarea ou na caixa de upload)
+                extra.addEventListener("paste", (e) => {
+                    const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+                    for (let item of items) {
+                        if (item.type.indexOf("image") === 0) {
+                            const file = item.getAsFile();
+                            processarArquivo(file);
+                            break;
+                        }
+                    }
+                });
             });
-
-        });
-
-    });
-
-}
-
-
-
-//=========================================
-// Envio
-//=========================================
-
-function enviar(){
-
-    const resultados=[];
-
-    empresas.forEach((empresa,i)=>{
-
-        const radio=document.querySelector(`input[name="empresa${i}"]:checked`);
-
-        if (!radio){
-
-            alert("Responda todas as empresas.");
-
-            throw "";
-
         }
 
-        const company=document.querySelectorAll(".company")[i];
+        function enviar() {
+            const resultados = [];
 
-        const texto=company.querySelector("textarea").value;
+            for (let i = 0; i < empresas.length; i++) {
+                const empresa = empresas[i];
+                const radio = document.querySelector(`input[name="empresa${i}"]:checked`);
 
-        const arquivoInput=company.querySelector("input[type=file]").files[0];
+                if (!radio) {
+                    alert("Responda todas as empresas.");
+                    return;
+                }
 
-        const arquivo = arquivoInput ? "TEM ARQUIVO" : "";
+                const company = document.querySelectorAll(".company")[i];
+                const texto = company.querySelector("textarea").value;
+                const fileInput = company.querySelector(".input-file");
+                const arquivo = fileInput.files[0];
 
-        // Se respondeu NÃO, precisa justificar OU anexar um arquivo
-        if (radio.value === "NAO" && texto === "" || radio.value === "NAO"  && !arquivo) {
+                if (radio.value === "NAO" && texto === "" && !arquivo) {
+                    alert(
+                        `A empresa "${empresa}" foi marcada como NÃO.\n\n` +
+                        "É obrigatório informar uma justificativa ou anexar/colar um arquivo."
+                    );
+                    return;
+                }
 
-            alert(
-                `A empresa "${empresa}" foi marcada como NÃO.\n\n` +
-                "É obrigatório informar uma justificativa ou anexar um arquivo."
-            );
+                resultados.push({
+                    empresa,
+                    status: radio.value,
+                    justificativa: texto,
+                    arquivo
+                });
+            }
 
-            throw "";
-
+            console.log("Dados salvos com sucesso:", resultados);
+            mostrarTela("screenSuccess");
         }
 
-
-        resultados.push({
-
-            empresa,
-
-            status:radio.value,
-
-            justificativa:texto,
-
-            arquivo
-
-        });
-
-    });
-
-    console.log(resultados);
-
-    /*
-    google.script.run
-    .withSuccessHandler(()=>{
-
-        mostrarTela("screenSuccess");
-
-    })
-    .salvar(resultados);
-    */
-
-    mostrarTela("screenSuccess");
-
-}
-
-
-
-//=========================================
-// Reinício
-//=========================================
-
-function novaRotina(){
-
-    document.getElementById("rotina").value="";
-
-    document.getElementById("lista").innerHTML="";
-
-    mostrarTela("screenSelect");
-
-}
-</script>
+        function novaRotina() {
+            document.getElementById("rotina").value = "";
+            document.getElementById("lista").innerHTML = "";
+            mostrarTela("screenSelect");
+        }
+    </script>
 
 </body>
 

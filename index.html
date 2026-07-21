@@ -139,41 +139,123 @@ background:#5d35a4;
 </head>
 
 <body>
-
 <div class="form">
 
-<div class="top"></div>
+    <!-- ===================== -->
+    <!-- TELA 1 -->
+    <!-- ===================== -->
 
-<div class="card">
+    <div id="screenSelect" class="screen">
 
-<h1>Avaliação de Empresas Aderentes</h1>
+        <div class="top"></div>
 
-<p class="subtitle">
-Verifique se cada empresa está aderente.
-Caso responda <b>NÃO</b>, será necessário justificar e anexar evidências.
-</p>
+        <div class="card">
 
-<div class="header">
+            <h1>Publicação de Resultados</h1>
 
-<div>Empresa</div>
+            <p class="subtitle">
+                Selecione a rotina que deseja publicar.
+            </p>
 
-<div>SIM</div>
+            <select id="rotina" style="width:100%;padding:12px;font-size:16px;">
 
-<div>NÃO</div>
+                <option value="">Selecione...</option>
+
+                <option>Auditoria Operacional</option>
+
+                <option>Auditoria Comercial</option>
+
+                <option>Limpeza</option>
+
+                <option>Segurança</option>
+
+            </select>
+
+            <button onclick="continuar()">
+                Continuar
+            </button>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ===================== -->
+    <!-- TELA 2 -->
+    <!-- ===================== -->
+
+    <div id="screenForm" class="screen" style="display:none;">
+
+        <div class="top"></div>
+
+        <div class="card">
+
+            <h1 id="tituloRotina"></h1>
+
+            <p class="subtitle">
+
+                Verifique se cada empresa está aderente.
+
+                Caso responda <b>NÃO</b>, será necessário justificar e anexar evidências.
+
+            </p>
+
+            <div class="header">
+
+                <div>Empresa</div>
+
+                <div>SIM</div>
+
+                <div>NÃO</div>
+
+            </div>
+
+            <div id="lista"></div>
+
+            <button onclick="enviar()">
+
+                Enviar
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ===================== -->
+    <!-- TELA 3 -->
+    <!-- ===================== -->
+
+    <div id="screenSuccess" class="screen" style="display:none;">
+
+        <div class="top"></div>
+
+        <div class="card" style="text-align:center;">
+
+            <h1>✔ Cadastro realizado</h1>
+
+            <p class="subtitle">
+
+                Os resultados foram registrados com sucesso.
+
+            </p>
+
+            <button onclick="novaRotina()">
+
+                Publicar outra rotina
+
+            </button>
+
+        </div>
+
+    </div>
 
 </div>
-
-<div id="lista"></div>
-
-<button>Enviar</button>
-
-</div>
-
-</div>
-
 <script>
-
-const empresas=[
+const empresas = [
 
 "002 - VIAÇÃO VIÇOSA LTDA",
 
@@ -195,80 +277,227 @@ const empresas=[
 
 ];
 
-const lista=document.getElementById("lista");
 
-empresas.forEach((empresa,i)=>{
+//=========================================
+// Navegação
+//=========================================
 
-const div=document.createElement("div");
+function mostrarTela(id){
 
-div.className="company";
+    document
+        .querySelectorAll(".screen")
+        .forEach(t=>t.style.display="none");
 
-div.innerHTML=`
-
-<div class="company-line">
-
-<div>${empresa}</div>
-
-<div>
-<input
-type="radio"
-name="empresa${i}"
-value="SIM">
-</div>
-
-<div>
-<input
-type="radio"
-name="empresa${i}"
-value="NAO"
-class="nao">
-</div>
-
-</div>
-
-<div class="extra">
-
-<label><b>Justificativa *</b></label>
-
-<textarea
-placeholder="Descreva o motivo da negativa..."></textarea>
-
-<label><b>Anexar evidências *</b></label>
-
-<input
-type="file"
-accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
-
-</div>
-
-`;
-
-lista.appendChild(div);
-
-const radios=div.querySelectorAll("input[type=radio]");
-
-const extra=div.querySelector(".extra");
-
-radios.forEach(r=>{
-
-r.addEventListener("change",()=>{
-
-if(r.value==="NAO"){
-
-extra.style.display="block";
-
-}else{
-
-extra.style.display="none";
+    document
+        .getElementById(id)
+        .style.display="block";
 
 }
 
-});
 
-});
+//=========================================
+// Tela 1
+//=========================================
 
-});
+function continuar(){
 
+    const rotina=document.getElementById("rotina").value;
+
+    if(rotina===""){
+
+        alert("Selecione uma rotina.");
+
+        return;
+
+    }
+
+    document.getElementById("tituloRotina").innerText=rotina;
+
+    construirFormulario();
+
+    mostrarTela("screenForm");
+
+}
+
+
+
+//=========================================
+// Construção dinâmica
+//=========================================
+
+function construirFormulario(){
+
+    const lista=document.getElementById("lista");
+
+    lista.innerHTML="";
+
+    empresas.forEach((empresa,i)=>{
+
+        const div=document.createElement("div");
+
+        div.className="company";
+
+        div.innerHTML=`
+
+        <div class="company-line">
+
+            <div>${empresa}</div>
+
+            <div>
+
+                <input
+                    type="radio"
+                    name="empresa${i}"
+                    value="SIM">
+
+            </div>
+
+            <div>
+
+                <input
+                    type="radio"
+                    name="empresa${i}"
+                    value="NAO">
+
+            </div>
+
+        </div>
+
+        <div class="extra">
+
+            <label>
+
+                <b>Justificativa *</b>
+
+            </label>
+
+            <textarea
+                placeholder="Explique o motivo..."></textarea>
+
+            <label>
+
+                <b>Anexo *</b>
+
+            </label>
+
+            <input
+                type="file">
+
+        </div>
+
+        `;
+
+        lista.appendChild(div);
+
+        const radios=div.querySelectorAll("input[type=radio]");
+
+        const extra=div.querySelector(".extra");
+
+        radios.forEach(r=>{
+
+            r.addEventListener("change",()=>{
+
+                extra.style.display=
+                    r.value==="NAO"
+                    ? "block"
+                    : "none";
+
+            });
+
+        });
+
+    });
+
+}
+
+
+
+//=========================================
+// Envio
+//=========================================
+
+function enviar(){
+
+    const resultados=[];
+
+    empresas.forEach((empresa,i)=>{
+
+        const radio=document.querySelector(`input[name="empresa${i}"]:checked`);
+
+        if(!radio){
+
+            alert("Responda todas as empresas.");
+
+            throw "";
+
+        }
+
+        const company=document.querySelectorAll(".company")[i];
+
+        const texto=company.querySelector("textarea").value;
+
+        const arquivoInput=company.querySelector("input[type=file]").files[0];
+
+        const arquivo = arquivoInput.files[0];
+
+        // Se respondeu NÃO, precisa justificar OU anexar um arquivo
+        if (radio.value === "NAO" && texto === "" && !arquivo) {
+
+            alert(
+                `A empresa "${empresa}" foi marcada como NÃO.\n\n` +
+                "É obrigatório informar uma justificativa ou anexar um arquivo."
+            );
+
+            return;
+
+        }
+
+
+        resultados.push({
+
+            empresa,
+
+            status:radio.value,
+
+            justificativa:texto,
+
+            arquivo
+
+        });
+
+    });
+
+    console.log(resultados);
+
+    /*
+    google.script.run
+    .withSuccessHandler(()=>{
+
+        mostrarTela("screenSuccess");
+
+    })
+    .salvar(resultados);
+    */
+
+    mostrarTela("screenSuccess");
+
+}
+
+
+
+//=========================================
+// Reinício
+//=========================================
+
+function novaRotina(){
+
+    document.getElementById("rotina").value="";
+
+    document.getElementById("lista").innerHTML="";
+
+    mostrarTela("screenSelect");
+
+}
 </script>
 
 </body>

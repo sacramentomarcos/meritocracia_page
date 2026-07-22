@@ -365,6 +365,24 @@ background:#5d35a4;
             mostrarTela("screenForm");
         }
 
+        // Converte um objeto File do navegador para Base64
+        function arquivoParaBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    // Separa o cabeçalho "data:image/png;base64," para manter apenas o conteúdo puro em base64
+                    const base64Content = reader.result.split(',')[1];
+                    resolve({
+                        name: file.name,
+                        type: file.type,
+                        base64Content: base64Content
+                    });
+                };
+                reader.onerror = error => reject(error);
+                reader.readAsDataURL(file);
+            });
+        }
+
         function construirFormulario() {
             const lista = document.getElementById("lista");
             lista.innerHTML = "";
@@ -525,7 +543,7 @@ background:#5d35a4;
             });
         }
 
-        function enviar() {
+        async function enviar() {
             const resultados = [];
 
             for (let i = 0; i < empresas.length; i++) {
@@ -542,25 +560,34 @@ background:#5d35a4;
                 const arquivosInput = company.querySelector(".input-file");
                 const arquivos = Array.from(arquivosInput.files);
 
-                // Se respondeu NÃO, precisa de justificativa OU pelo menos 1 print anexado
                 if (radio.value === "NAO" && texto === "" && arquivos.length === 0) {
                     alert(
                         `A empresa "${empresa}" foi marcada como NÃO.\n\n` +
-                        "É obrigatório informar uma justificativa ou anexar/colar ao menos um print."
+                        "É obrigatório informar uma justificativa ou anexar/colar ao menos um arquivo."
                     );
                     return;
                 }
+
+                // Converte todos os arquivos para Base64 de forma assíncrona
+                const arquivosBase64 = await Promise.all(arquivos.map(file => arquivoParaBase64(file)));
 
                 resultados.push({
                     empresa,
                     status: radio.value,
                     justificativa: texto,
-                    arquivos // Agora envia o array com todos os prints capturados
+                    arquivos: arquivosBase64
                 });
             }
 
-            console.log("Dados salvos com sucesso:", resultados);
-            mostrarTela("screenSuccess");
+            // Dispara a gravação no Google Apps Script
+            google.script.run
+                .withSuccessHandler(() => {
+                    mostrarTela("screenSuccess");
+                })
+                .withFailureHandler((erro) => {
+                    alert("Erro ao salvar: " + erro.message);
+                })
+                .salvarRotina(resultados);
         }
 
         function novaRotina() {

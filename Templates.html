@@ -1,0 +1,61 @@
+<script>
+const FRONTEND_CONSTANTS = {
+  ROTINAS: [
+    'Auditoria Operacional',
+    'Auditoria Comercial',
+    'Limpeza',
+    'Segurança',
+  ],
+  EMPRESAS: [
+    '002 - VIAÇÃO VIÇOSA LTDA',
+    '003 - COLETIVOS RIO BRANCO',
+    '004 - VIAÇÃO UBÁ',
+    '009 - SV TRANSPORTES LTDA',
+    '011 - EXPRESSO TRÊS FRONTEIRAS',
+    '012 - EXPRESSO PLANALTO LTDA',
+    '015 - SV TRANSPORTES',
+    '022 - SV TRANSPORTES LAFAIETE',
+    '027 - ANSAL',
+  ],
+  MESSAGES: {
+    selecioneRotina: 'Selecione uma rotina.',
+    respondaEmpresas: 'Responda todas as empresas.',
+    justificativaObrigatoria: 'É obrigatório informar uma justificativa ou anexar/colar ao menos um arquivo.',
+  },
+  ACCEPTED_FORMATS: 'image/*, .pdf, .doc, .docx, .xls, .xlsx, .csv',
+};
+
+const Templates = {
+  rotinaOptions: () => {
+    return [
+      '<option value="">Selecione...</option>',
+      ...FRONTEND_CONSTANTS.ROTINAS.map((rotina) => `<option value="${rotina}">${rotina}</option>`),
+    ].join('');
+  },
+
+  companyCard: (empresa, index) => {
+    return `
+      <div class="company" data-company-index="${index}">
+        <div class="company-line">
+          <div>${empresa}</div>
+          <div><input type="radio" name="empresa${index}" value="SIM"></div>
+          <div><input type="radio" name="empresa${index}" value="NAO"></div>
+        </div>
+
+        <div class="extra">
+          <label><b>Justificativa *</b></label>
+          <textarea placeholder="Explique o motivo ou cole o print diretamente aqui..."></textarea>
+
+          <label><b>Anexo / Prints / Documentos *</b></label>
+          <div class="upload-area" tabindex="0">
+            <p>📋 <b>Clique aqui para selecionar</b> ou pressione <b>Ctrl + V</b> para colar prints</p>
+            <p class="upload-area-description">Aceita Imagens, PDF, Excel (.xlsx, .xls, .csv) e Word (.doc, .docx)</p>
+            <input type="file" class="input-file" accept="${FRONTEND_CONSTANTS.ACCEPTED_FORMATS}" multiple>
+            <div class="preview-container"></div>
+          </div>
+        </div>
+      </div>
+    `;
+  },
+};
+</script>

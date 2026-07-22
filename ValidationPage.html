@@ -1,0 +1,24 @@
+<script>
+const Validation = {
+  validarFormulario: () => {
+    const companies = document.querySelectorAll('.company');
+
+    for (let index = 0; index < companies.length; index += 1) {
+      const companyElement = companies[index];
+      const radio = companyElement.querySelector(`input[name="empresa${index}"]:checked`);
+      const justificativa = companyElement.querySelector('textarea').value.trim();
+      const arquivos = Array.from(companyElement.querySelector('.input-file').files);
+
+      if (!radio) {
+        return FRONTEND_CONSTANTS.MESSAGES.respondaEmpresas;
+      }
+
+      if (radio.value === 'NAO' && justificativa.length === 0 && arquivos.length === 0) {
+        return FRONTEND_CONSTANTS.MESSAGES.justificativaObrigatoria;
+      }
+    }
+
+    return null;
+  },
+};
+</script>

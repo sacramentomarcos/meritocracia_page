@@ -1,0 +1,69 @@
+<script>
+const FormBuilder = {
+  construirFormulario: () => {
+    const lista = UI.getById('lista');
+    UI.clearContainer(lista);
+    const html = FRONTEND_CONSTANTS.EMPRESAS.map((empresa, index) => Templates.companyCard(empresa, index)).join('');
+    lista.innerHTML = html;
+    FormBuilder.bindUploadEvents();
+    FormBuilder.bindRadioEvents();
+  },
+
+  bindUploadEvents: () => {
+    document.querySelectorAll('.company').forEach((companyElement) => {
+      const uploadArea = companyElement.querySelector('.upload-area');
+      const fileInput = companyElement.querySelector('.input-file');
+      const previewContainer = companyElement.querySelector('.preview-container');
+      const extra = companyElement.querySelector('.extra');
+      const fileStore = [];
+
+      uploadArea.addEventListener('click', () => fileInput.click());
+      uploadArea.addEventListener('paste', (event) => Upload.handlePaste(event, fileStore, previewContainer, fileInput));
+      fileInput.addEventListener('change', (event) => Upload.handleFileInput(event, fileStore, previewContainer));
+
+      companyElement.dataset.fileStore = JSON.stringify(fileStore);
+      Upload.initializePreviewState(companyElement, fileStore, previewContainer, fileInput);
+    });
+  },
+
+  bindRadioEvents: () => {
+    document.querySelectorAll('.company').forEach((companyElement) => {
+      const radios = companyElement.querySelectorAll('input[type=radio]');
+      const extra = companyElement.querySelector('.extra');
+
+      radios.forEach((radio) => {
+        radio.addEventListener('change', () => {
+          extra.style.display = radio.value === 'NAO' ? 'block' : 'none';
+        });
+      });
+    });
+  },
+
+  montarResultados: async () => {
+    const resultados = [];
+    const companies = document.querySelectorAll('.company');
+
+    for (let index = 0; index < companies.length; index += 1) {
+      const companyElement = companies[index];
+      const empresa = FRONTEND_CONSTANTS.EMPRESAS[index];
+      const radio = companyElement.querySelector(`input[name="empresa${index}"]:checked`);
+      const justificativa = companyElement.querySelector('textarea').value.trim();
+      const arquivos = Array.from(companyElement.querySelector('.input-file').files);
+      const arquivosBase64 = await Promise.all(arquivos.map((file) => Upload.arquivoParaBase64(file)));
+
+      resultados.push({
+        empresa,
+        status: radio.value,
+        justificativa,
+        arquivos: arquivosBase64,
+      });
+    }
+
+    return resultados;
+  },
+
+  reset: () => {
+    UI.clearContainer(UI.getById('lista'));
+  },
+};
+</script>

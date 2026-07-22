@@ -1,0 +1,30 @@
+<script>
+const UI = {
+  mostrarTela: (screenId) => {
+    document.querySelectorAll('.screen').forEach((element) => element.classList.remove('active'));
+    const screen = UI.getById(screenId);
+    if (screen) {
+      screen.classList.add('active');
+    }
+  },
+
+  getById: (id) => document.getElementById(id),
+
+  setText: (id, text) => {
+    const element = UI.getById(id);
+    if (element) {
+      element.innerText = text;
+    }
+  },
+
+  showError: (message) => {
+    alert(message);
+  },
+
+  clearContainer: (element) => {
+    if (element) {
+      element.innerHTML = '';
+    }
+  },
+};
+</script>

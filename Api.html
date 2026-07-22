@@ -1,0 +1,13 @@
+<script>
+const Api = {
+  callServer: (functionName, data) => {
+    return new Promise((resolve, reject) => {
+      google.script.run
+        .withSuccessHandler(resolve)
+        .withFailureHandler(reject)[functionName](data);
+    });
+  },
+
+  salvarRotina: (dados) => Api.callServer('salvarRotina', dados),
+};
+</script>

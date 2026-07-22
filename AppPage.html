@@ -1,0 +1,67 @@
+<script>
+const App = {
+  state: { rotina: '' },
+  elements: {},
+
+  init: () => {
+    App.cacheElements();
+    App.bindEvents();
+    App.renderRotinaOptions();
+    UI.mostrarTela('screenSelect');
+  },
+
+  cacheElements: () => {
+    App.elements.rotinaSelect = UI.getById('rotina');
+    App.elements.continueButton = UI.getById('continueButton');
+    App.elements.submitButton = UI.getById('submitButton');
+    App.elements.newRoutineButton = UI.getById('newRoutineButton');
+    App.elements.tituloRotina = UI.getById('tituloRotina');
+  },
+
+  bindEvents: () => {
+    App.elements.continueButton.addEventListener('click', App.continuar);
+    App.elements.submitButton.addEventListener('click', App.enviar);
+    App.elements.newRoutineButton.addEventListener('click', App.novaRotina);
+  },
+
+  renderRotinaOptions: () => {
+    App.elements.rotinaSelect.innerHTML = Templates.rotinaOptions();
+  },
+
+  continuar: () => {
+    const rotina = App.elements.rotinaSelect.value;
+    if (!rotina) {
+      return UI.showError(FRONTEND_CONSTANTS.MESSAGES.selecioneRotina);
+    }
+
+    App.state.rotina = rotina;
+    UI.setText('tituloRotina', rotina);
+    FormBuilder.construirFormulario();
+    UI.mostrarTela('screenForm');
+  },
+
+  enviar: async () => {
+    const erro = Validation.validarFormulario();
+    if (erro) {
+      return UI.showError(erro);
+    }
+
+    try {
+      const resultados = await FormBuilder.montarResultados();
+      await Api.salvarRotina(resultados);
+      UI.mostrarTela('screenSuccess');
+    } catch (error) {
+      UI.showError(`Erro ao salvar: ${error.message}`);
+    }
+  },
+
+  novaRotina: () => {
+    App.state.rotina = '';
+    App.elements.rotinaSelect.value = '';
+    FormBuilder.reset();
+    UI.mostrarTela('screenSelect');
+  },
+};
+
+document.addEventListener('DOMContentLoaded', App.init);
+</script>

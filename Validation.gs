@@ -1,7 +1,7 @@
 const ValidationService = {
   validarCampos: (dados) => {
     if (!dados || !Array.isArray(dados)) {
-      throw new Error('Dados inv·lidos');
+      throw new Error('Dados inv√°lidos');
     }
     return true;
   },

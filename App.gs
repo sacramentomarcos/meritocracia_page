@@ -1,12 +1,13 @@
-function doGet() {
+function doGet(e) {
+  const page = e && e.parameter && e.parameter.page === 'app' ? 'App' : 'Index';
+
   return HtmlService
-    .createTemplateFromFile('Index')
+    .createTemplateFromFile(page)
     .evaluate()
     .setTitle('Meritocracia - Envio das rotinas');
 }
 
-function include(filename) {
-  return HtmlService
-    .createHtmlOutputFromFile(filename)
-    .getContent();
+function salvarRotina(dados) {
+  ValidationService.validarCampos(dados);
+  return RotinaService.salvarRotina(dados);
 }

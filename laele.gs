@@ -1,12 +1,4 @@
-const SpreadsheetService = {
-  salvarRegistro: (item, urlsArquivos) => {
-  const ss = SpreadsheetApp.openByUrl('https://docs.google.com/spreadsheets/d/1eAMoLMG415cqMo_pWwIcieaKAjJ0Sew-rHiGAIZvfh0');
-  const planilha = ss.getActiveSheet(); 
-
-  const agora = new Date();
-
-  planilha.appendRow([
-    agora,
+planilha.appendRow([
     Utilities.getUuid(),       // Coluna A: id (Gera um ID único automático)
     item.id_empresa,          // Coluna B: id_empresa
     //item.idrotina,             // Coluna C: idrotina
@@ -18,5 +10,5 @@ const SpreadsheetService = {
     item.justificativa,
     urlsArquivos.join('\n')
   ]);
-  }
-};
+
+  id_empresa	rotina	id_rotina	mes	ano	cumprimento	justificativa	url_anexos

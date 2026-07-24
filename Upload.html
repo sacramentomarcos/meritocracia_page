@@ -26,7 +26,8 @@ const Upload = {
   },
 
   handlePaste: (event, fileStore, previewContainer, fileInput) => {
-    const clipboardItems = Array.from((event.clipboardData || event.originalEvent.clipboardData).items || []);
+    const clipboardData = event.clipboardData || event.originalEvent?.clipboardData;
+    const clipboardItems = Array.from(clipboardData?.items || []);
     const imageFiles = clipboardItems
       .filter((item) => item.type.startsWith('image/'))
       .map((item) => item.getAsFile())
@@ -35,7 +36,8 @@ const Upload = {
     if (!imageFiles.length) {
       return;
     }
-
+    
+    event.preventDefault();
     Upload.addFiles(imageFiles, fileStore, previewContainer, fileInput);
   },
 

@@ -108,28 +108,42 @@ const Templates = {
   },
 
   companyCard: (empresa, index) => {
-    return `
-      <div class="company" data-company-index="${index}">
-        <div class="company-line">
-          <div>${empresa}</div>
-          <div><input type="radio" name="empresa${index}" value="SIM"></div>
-          <div><input type="radio" name="empresa${index}" value="NAO"></div>
+  return `
+    <div class="company" data-company-index="${index}">
+      <div class="company-line">
+        <div>${empresa}</div>
+        
+        <!-- Opção SIM -->
+        <div class="radio-box">
+          <label class="custom-radio radio-sim">
+            <input type="radio" name="empresa${index}" value="SIM">
+            <span class="radio-tile">SIM</span>
+          </label>
         </div>
 
-        <div class="extra">
-          <label><b>Justificativa *</b></label>
-          <textarea placeholder="Explique o motivo ou cole o print diretamente aqui..."></textarea>
-
-          <label><b>Anexo / Prints / Documentos *</b></label>
-          <div class="upload-area" tabindex="0">
-            <p>📋 <b>Clique aqui para selecionar</b> ou pressione <b>Ctrl + V</b> para colar prints</p>
-            <p class="upload-area-description">Aceita Imagens, PDF, Excel (.xlsx, .xls, .csv) e Word (.doc, .docx)</p>
-            <input type="file" class="input-file" accept="${FRONTEND_CONSTANTS.ACCEPTED_FORMATS}" multiple>
-            <div class="preview-container"></div>
-          </div>
+        <!-- Opção NÃO -->
+        <div class="radio-box">
+          <label class="custom-radio radio-nao">
+            <input type="radio" name="empresa${index}" value="NAO">
+            <span class="radio-tile">NÃO</span>
+          </label>
         </div>
       </div>
-    `;
-  },
+
+      <div class="extra">
+        <label><b>Justificativa *</b></label>
+        <textarea placeholder="Explique o motivo ou cole prints diretamente aqui..."></textarea>
+
+        <label><b>Anexo / Prints / Documentos *</b></label>
+        <div class="upload-area" tabindex="0">
+          <p>📋 <b>Clique aqui para selecionar anexos</b></p>
+          <p class="upload-area-description">Aceita Imagens, PDF, Excel (.xlsx, .xls, .csv) e Word (.doc, .docx)</p>
+          <input type="file" class="input-file" accept="${FRONTEND_CONSTANTS.ACCEPTED_FORMATS}" multiple>
+          <div class="preview-container"></div>
+        </div>
+      </div>
+    </div>
+  `;
+},
 };
 </script>

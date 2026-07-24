@@ -14,10 +14,12 @@ const FormBuilder = {
       const uploadArea = companyElement.querySelector('.upload-area');
       const fileInput = companyElement.querySelector('.input-file');
       const previewContainer = companyElement.querySelector('.preview-container');
+      const textarea = companyElement.querySelector('textarea');
       const extra = companyElement.querySelector('.extra');
       const fileStore = [];
 
       uploadArea.addEventListener('click', () => fileInput.click());
+      textarea.addEventListener('paste', (event) => Upload.handlePaste(event, fileStore, previewContainer, fileInput));
       uploadArea.addEventListener('paste', (event) => Upload.handlePaste(event, fileStore, previewContainer, fileInput));
       fileInput.addEventListener('change', (event) => Upload.handleFileInput(event, fileStore, previewContainer));
 
@@ -52,7 +54,11 @@ const FormBuilder = {
       const arquivosBase64 = await Promise.all(arquivos.map((file) => Upload.arquivoParaBase64(file)));
 
       resultados.push({
-        empresa,
+
+        
+
+        id_empresa: empresa.slice(0,3),
+        empresa: empresa.slice(0,3),
         status: radio.value,
         justificativa,
         arquivos: arquivosBase64,

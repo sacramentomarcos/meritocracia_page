@@ -39,4 +39,68 @@ button:hover { background: #5d35a4; }
 
 
 #rotina {width:100%; padding:12px; font-size:16px;}
+
+/* ==========================================
+   Estilização dos Botões Quadrados (SIM / NÃO)
+   ========================================== */
+
+/* Centraliza os botões dentro das colunas da grid */
+.radio-box {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 4px;
+}
+
+.custom-radio {
+  width: 100%;
+  cursor: pointer;
+}
+
+/* Oculta o rádio tradicional do navegador */
+.custom-radio input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* Design base do botão quadrado */
+.radio-tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 38px;
+  background-color: #ffffff;
+  border: 2px solid #ccc;
+  border-radius: 6px; /* Suave curvatura combinando com o resto do layout */
+  color: #555;
+  font-weight: bold;
+  font-size: 13px;
+  transition: all 0.2s ease-in-out;
+  user-select: none;
+}
+
+/* Efeito Hover ao passar o mouse */
+.custom-radio:hover .radio-tile {
+  border-color: #999;
+  background-color: #f8f9fa;
+}
+
+/* Estado SELECIONADO: SIM (Verde) */
+.radio-sim input[type="radio"]:checked + .radio-tile {
+  background-color: #2e7d32;
+  border-color: #2e7d32;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(46, 125, 50, 0.3);
+}
+
+/* Estado SELECIONADO: NÃO (Vermelho) */
+.radio-nao input[type="radio"]:checked + .radio-tile {
+  background-color: #d32f2f;
+  border-color: #d32f2f;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(211, 47, 47, 0.3);
+}
 </style>

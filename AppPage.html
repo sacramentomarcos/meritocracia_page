@@ -1,17 +1,19 @@
 <script>
 const App = {
-  state: { rotina: '' },
+  state: { rotina: '', competencia: '' },
   elements: {},
 
   init: () => {
     App.cacheElements();
     App.bindEvents();
     App.renderRotinaOptions();
+    App.renderCompetenciaOptions();
     UI.mostrarTela('screenSelect');
   },
 
   cacheElements: () => {
     App.elements.rotinaSelect = UI.getById('rotina');
+    App.elements.competenciaSelect = UI.getById('competencia');
     App.elements.continueButton = UI.getById('continueButton');
     App.elements.submitButton = UI.getById('submitButton');
     App.elements.newRoutineButton = UI.getById('newRoutineButton');
@@ -28,13 +30,24 @@ const App = {
     App.elements.rotinaSelect.innerHTML = Templates.rotinaOptions();
   },
 
+  renderCompetenciaOptions: () => {
+    App.elements.competenciaSelect.innerHTML = Templates.competenciaOptions();
+  },
+
   continuar: () => {
     const rotina = App.elements.rotinaSelect.value;
+    const competencia = App.elements.competenciaSelect.value;
+
     if (!rotina) {
       return UI.showError(FRONTEND_CONSTANTS.MESSAGES.selecioneRotina);
     }
 
+    if (!competencia) {
+      return UI.showError('Selecione a competência do relatório.');
+    }
+
     App.state.rotina = rotina;
+    App.state.competencia = competencia;
     UI.setText('tituloRotina', rotina);
     FormBuilder.construirFormulario();
     UI.mostrarTela('screenForm');
@@ -57,7 +70,9 @@ const App = {
 
   novaRotina: () => {
     App.state.rotina = '';
+    App.state.competencia = '';
     App.elements.rotinaSelect.value = '';
+    App.elements.competenciaSelect.value = '';
     FormBuilder.reset();
     UI.mostrarTela('screenSelect');
   },

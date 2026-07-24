@@ -107,6 +107,15 @@ const Templates = {
     ].join('');
   },
 
+  competenciaOptions: () => {
+    const meses = Array.from({ length: 12 }, (_, index) => {
+      const mes = String(index + 1).padStart(2, '0');
+      return `<option value="${mes}/2026">${mes}/2026</option>`;
+    });
+
+    return ['<option value="">Selecione...</option>', ...meses].join('');
+  },
+
   companyCard: (empresa, index) => {
   return `
     <div class="company" data-company-index="${index}">

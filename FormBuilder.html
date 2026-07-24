@@ -54,11 +54,10 @@ const FormBuilder = {
       const arquivosBase64 = await Promise.all(arquivos.map((file) => Upload.arquivoParaBase64(file)));
 
       resultados.push({
-
-        
-
         id_empresa: empresa.slice(0,3),
         empresa: empresa.slice(0,3),
+        rotina: App.state.rotina,
+        competencia: App.state.competencia,
         status: radio.value,
         justificativa,
         arquivos: arquivosBase64,

@@ -74,10 +74,18 @@ const FormBuilder = {
 
 const Api = {
   callServer: (functionName, data) => {
+    UI.bloquearTela();
+
     return new Promise((resolve, reject) => {
       google.script.run
-        .withSuccessHandler(resolve)
-        .withFailureHandler(reject)[functionName](data);
+        .withSuccessHandler((resultado) => {
+          resolve(resultado);
+        })
+        .withFailureHandler((erro) => {
+          reject(erro);
+        })[functionName](data);
+    }).finally(() => {
+      UI.desbloquearTela();
     });
   },
 
@@ -86,6 +94,81 @@ const Api = {
 };
 
 const UI = {
+  isLoading: false,
+  overlayId: 'loadingOverlay',
+
+  bloquearTela: (mensagem = 'Processando...') => {
+    if (UI.isLoading) {
+      return;
+    }
+
+    UI.isLoading = true;
+    document.body.style.cursor = 'wait';
+
+    let overlay = document.getElementById(UI.overlayId);
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = UI.overlayId;
+      overlay.style.cssText = [
+        'position:fixed',
+        'inset:0',
+        'background:rgba(80, 80, 80, 0.55)',
+        'z-index:999999',
+        'display:flex',
+        'align-items:center',
+        'justify-content:center',
+        'pointer-events:auto'
+      ].join(';');
+      document.body.appendChild(overlay);
+    }
+
+    overlay.innerHTML = `
+      <div style="background:#fff; color:#333; padding:20px 28px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.25); text-align:center; min-width:240px;">
+        <div style="font-size:28px; margin-bottom:10px;">⏳</div>
+        <div style="font-weight:700; margin-bottom:6px;">Processando...</div>
+        <div style="font-size:14px; color:#666;">Aguarde enquanto a operação é concluída.</div>
+      </div>
+    `;
+
+    const botoes = document.querySelectorAll('button, input[type="button"], input[type="submit"], input[type="radio"], select, textarea, .upload-area');
+    botoes.forEach((elemento) => {
+      if (!elemento.dataset.originalDisabled) {
+        elemento.dataset.originalDisabled = String(elemento.disabled || false);
+      }
+      if (elemento.tagName === 'INPUT' || elemento.tagName === 'BUTTON' || elemento.tagName === 'SELECT' || elemento.tagName === 'TEXTAREA') {
+        elemento.disabled = true;
+      }
+      if (elemento.classList?.contains('upload-area')) {
+        elemento.style.pointerEvents = 'none';
+      }
+    });
+  },
+
+  desbloquearTela: () => {
+    if (!UI.isLoading) {
+      return;
+    }
+
+    UI.isLoading = false;
+    document.body.style.cursor = 'default';
+
+    const overlay = document.getElementById(UI.overlayId);
+    if (overlay) {
+      overlay.remove();
+    }
+
+    const botoes = document.querySelectorAll('button, input[type="button"], input[type="submit"], input[type="radio"], select, textarea, .upload-area');
+    botoes.forEach((elemento) => {
+      const estavaDesativado = elemento.dataset.originalDisabled === 'true';
+      if (elemento.tagName === 'INPUT' || elemento.tagName === 'BUTTON' || elemento.tagName === 'SELECT' || elemento.tagName === 'TEXTAREA') {
+        elemento.disabled = estavaDesativado;
+      }
+      if (elemento.classList?.contains('upload-area')) {
+        elemento.style.pointerEvents = '';
+      }
+      delete elemento.dataset.originalDisabled;
+    });
+  },
   mostrarTela: (screenId) => {
     document.querySelectorAll('.screen').forEach((element) => element.classList.remove('active'));
     const screen = UI.getById(screenId);

@@ -35,6 +35,10 @@ const App = {
   },
 
   continuar: async () => {
+    if (UI.isLoading) {
+      return;
+    }
+
     const rotina = App.elements.rotinaSelect.value;
     const competencia = App.elements.competenciaSelect.value;
     const rotinaOption = App.elements.rotinaSelect.options[App.elements.rotinaSelect.selectedIndex];
@@ -70,6 +74,10 @@ const App = {
   },
 
   enviar: async () => {
+    if (UI.isLoading) {
+      return;
+    }
+
     const erro = Validation.validarFormulario();
     if (erro) {
       return UI.showError(erro);

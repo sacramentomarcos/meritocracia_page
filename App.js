@@ -15,6 +15,10 @@ function salvarRotina(dados) {
   return RotinaService.salvarRotina(dados);
 }
 
+function validarRotinaNaCompetencia(dados) {
+  return RotinaService.validarRotinaNaCompetencia(dados);
+}
+
 const DriveService = {
   obterPasta: (folderId) => {
     const pasta = DriveApp.getFolderById(folderId);
@@ -57,12 +61,12 @@ const DriveService = {
 
     const pastaExistente = DriveService.obterPastaExistente(pastaAlvo, nomePasta);
     if (pastaExistente) {
-      console.log(`Pasta reutilizada: ${nomePasta}`);
+      Logger.log(`Pasta reutilizada: ${nomePasta}`);
       return pastaExistente;
     }
 
     const pastaNovaAliás = pastaAlvo.createFolder(nomePasta);
-    console.log(`Pasta criada: ${nomePasta}`);
+    Logger.log(`Pasta criada: ${nomePasta}`);
     return pastaNovaAliás;
   },
 
@@ -119,7 +123,133 @@ const DriveService = {
   },
 };
 
+function normalizarNomeCampo(valor) {
+  return String(valor || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '_');
+}
+
+function obterValorCampo(item, nomes) {
+  if (!item || typeof item !== 'object') {
+    return '';
+  }
+
+  const chaves = Object.keys(item || {});
+  const mapaNormalizado = {};
+
+  chaves.forEach((chave) => {
+    mapaNormalizado[normalizarNomeCampo(chave)] = item[chave];
+  });
+
+  for (const nome of nomes) {
+    const nomeNormalizado = normalizarNomeCampo(nome);
+
+    if (Object.prototype.hasOwnProperty.call(item, nome)) {
+      const valor = item[nome];
+      if (valor !== undefined && valor !== null && String(valor).trim() !== '') {
+        return String(valor).trim();
+      }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(mapaNormalizado, nomeNormalizado)) {
+      const valor = mapaNormalizado[nomeNormalizado];
+      if (valor !== undefined && valor !== null && String(valor).trim() !== '') {
+        return String(valor).trim();
+      }
+    }
+  }
+
+  return '';
+}
+
+function normalizarCompetencia(valor) {
+  const texto = String(valor || '').trim();
+  if (!texto) {
+    return '';
+  }
+
+  const textoSemEspacos = texto.replace(/\s+/g, '');
+  const matchDiaMesAno = textoSemEspacos.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
+  const matchMesAno = textoSemEspacos.match(/^(\d{1,2})[\/-](\d{4})$/);
+  const matchAnoMes = textoSemEspacos.match(/^(\d{4})[\/-](\d{1,2})$/);
+
+  if (matchDiaMesAno) {
+    const [, , mes, ano] = matchDiaMesAno;
+    return `${String(Number(mes)).padStart(2, '0')}/${ano}`;
+  }
+
+  if (matchMesAno) {
+    const [, mes, ano] = matchMesAno;
+    return `${String(Number(mes)).padStart(2, '0')}/${ano}`;
+  }
+
+  if (matchAnoMes) {
+    const [, ano, mes] = matchAnoMes;
+    return `${String(Number(mes)).padStart(2, '0')}/${ano}`;
+  }
+
+  return texto.toLowerCase();
+}
+
 const RotinaService = {
+  construirChaveRotinaCompetencia: (item) => {
+    if (!item) {
+      return '';
+    }
+
+    const idRotina = obterValorCampo(item, ['id_rotina', 'idrotina', 'idRotina', 'rotina_id', 'rotinaId', 'id'])
+      .trim()
+      .toLowerCase();
+
+    const competencia = normalizarCompetencia(
+      obterValorCampo(item, ['competencia', 'Competencia', 'competenciaSelecionada'])
+    ).toLowerCase();
+
+    if (!idRotina || !competencia) {
+      return '';
+    }
+
+    return `${idRotina}_${competencia}`;
+  },
+
+  validarRotinaNaCompetencia: (dados) => {
+    const entradas = Array.isArray(dados) ? dados : [dados];
+
+    if (!entradas.length || !entradas[0]) {
+      throw new Error('Dados inválidos para validar rotina');
+    }
+
+    const item = entradas[0];
+    const chaveAtual = RotinaService.construirChaveRotinaCompetencia(item);
+
+    if (!chaveAtual) {
+      return { sucesso: true, jaExiste: false, mensagem: null };
+    }
+
+    const dadosObjetos = lerDadosComoObjetos();
+    const chavesExistentes = Array.from(new Set (dadosObjetos
+      .map((registro) => RotinaService.construirChaveRotinaCompetencia(registro))
+      .filter(Boolean)));
+
+    const jaExiste = chavesExistentes.includes(chaveAtual);
+
+    Logger.log('chaveAtual')
+    Logger.log(chaveAtual)
+    Logger.log('chavesExistentes')
+    Logger.log(chavesExistentes)
+    Logger.log('jaExiste')
+    Logger.log(jaExiste)
+
+    return {
+      sucesso: true,
+      jaExiste,
+      mensagem: jaExiste
+        ? `A competência ${item.competencia} para a rotina selecionada já foi atualizada.`
+        : null,
+    };
+  },
+
   /**
    * Processa dados de rotinas com lógica de criação de pastas
    * Regra: Apenas criar pastas se houver resposta NEGATIVA + evidências anexadas
@@ -150,7 +280,7 @@ const RotinaService = {
           );
         } else if (item.status === 'SIM') {
           // Se for positiva, nenhuma pasta é criada
-          console.log(`Unidade ${item.id_empresa} cumpriu a rotina ${item.rotina}. Nenhuma pasta será criada.`);
+          Logger.log(`Unidade ${item.id_empresa} cumpriu a rotina ${item.rotina}. Nenhuma pasta será criada.`);
         }
 
         // Sempre registra na planilha, independentemente de criar pastas ou não
@@ -188,7 +318,7 @@ const RotinaService = {
     // 5. Salvar arquivos dentro da pasta do setor
     const urlsArquivos = DriveService.salvarArquivos(pastaSetor, item.arquivos || []);
 
-    console.log(
+    Logger.log(
       `✓ Estrutura criada/reutilizada: ${item.id_empresa} → ${item.competencia} → ${setor} (${urlsArquivos.length} arquivos salvos)`
     );
 
@@ -239,13 +369,20 @@ const SpreadsheetService = {
 
     const agora = new Date();
     const urlsValidas = (urlsArquivos || []).filter(Boolean);
+    const idRotina = String(
+      item.id_rotina ||
+      item.idrotina ||
+      item.id ||
+      item.rotina_id ||
+      item['id_rotina'] ||
+      ''
+    ).trim();
 
     planilha.appendRow([
       agora,
       Utilities.getUuid(),
       item.id_empresa,
-      //item.idrotina,
-      8,
+      idRotina,
       item.rotina,
       item.competencia || '',
       item.status,
@@ -322,4 +459,55 @@ const CONFIG = {
     '098': '1kLM51yRn7EJEHjaCKTAtMfUGyD6wVYF1',
   },
 };
+
+
+function lerDadosComoObjetos() {
+  const ID_PLANILHA = '1eAMoLMG415cqMo_pWwIcieaKAjJ0Sew-rHiGAIZvfh0';
+  const URL_PLANILHA = `https://docs.google.com/spreadsheets/d/${ID_PLANILHA}`;
+
+  let ss = null;
+
+  try {
+    ss = SpreadsheetApp.openById(ID_PLANILHA);
+  } catch (error) {
+    console.warn('Não foi possível abrir pelo ID. Tentando pela URL...', error);
+    try {
+      ss = SpreadsheetApp.openByUrl(URL_PLANILHA);
+    } catch (errUrl) {
+      console.warn('Não foi possível abrir pela URL. Usando planilha ativa.', errUrl);
+      ss = SpreadsheetApp.getActiveSpreadsheet();
+    }
+  }
+
+  if (!ss) {
+    throw new Error('Não foi possível conectar a nenhuma planilha.');
+  }
+
+  const aba = ss.getActiveSheet();
+  const dados = aba.getDataRange().getDisplayValues();
+
+  if (!dados || dados.length === 0) return [];
+
+  const primeiraLinha = (dados[0] || []).map((valor) => String(valor || '').trim());
+  const temCabecalho = primeiraLinha.some((valor) => /rotina|competencia|status|id_empresa/i.test(valor));
+
+  const cabecalhos = temCabecalho
+    ? primeiraLinha
+    : ['data', 'uuid', 'id_empresa', 'id_rotina', 'rotina', 'competencia', 'status', 'justificativa', 'evidencias'];
+
+  const linhas = temCabecalho ? dados.slice(1) : dados;
+
+  const dadosObjetos = linhas
+    .filter((linha) => linha.some((valor) => String(valor || '').trim()))
+    .map((linha) => {
+      const obj = {};
+      cabecalhos.forEach((cabecalho, index) => {
+        const nomeCampo = normalizarNomeCampo(cabecalho);
+        obj[nomeCampo] = linha[index] || '';
+      });
+      return obj;
+    });
+
+  return dadosObjetos;
+}
 

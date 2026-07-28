@@ -1,6 +1,6 @@
 <script>
 const App = {
-  state: { rotina: '', competencia: '' },
+  state: { rotina: '', competencia: '', idRotina: '' },
   elements: {},
 
   init: () => {
@@ -34,23 +34,39 @@ const App = {
     App.elements.competenciaSelect.innerHTML = Templates.competenciaOptions();
   },
 
-  continuar: () => {
+  continuar: async () => {
     const rotina = App.elements.rotinaSelect.value;
     const competencia = App.elements.competenciaSelect.value;
+    const rotinaOption = App.elements.rotinaSelect.options[App.elements.rotinaSelect.selectedIndex];
+    const idRotina = rotinaOption?.dataset?.id || '';
 
     if (!rotina) {
-      return UI.showError(FRONTEND_CONSTANTS.MESSAGES.selecioneRotina);
+      UI.showMessage(FRONTEND_CONSTANTS.MESSAGES.selecioneRotina);
+      return;
     }
 
     if (!competencia) {
-      return UI.showError('Selecione a competência do relatório.');
+      UI.showMessage('Selecione a competência do relatório.');
+      return;
     }
 
-    App.state.rotina = rotina;
-    App.state.competencia = competencia;
-    UI.setText('tituloRotina', rotina);
-    FormBuilder.construirFormulario();
-    UI.mostrarTela('screenForm');
+    try {
+      const validacao = await Api.validarRotina({ id_rotina: idRotina, competencia, rotina });
+      if (validacao?.jaExiste) {
+        UI.showMessage(validacao.mensagem || 'Essa rotina já foi atualizada para essa competência.');
+        return;
+      }
+
+      UI.clearMessage();
+      App.state.rotina = rotina;
+      App.state.competencia = competencia;
+      App.state.idRotina = idRotina;
+      UI.setText('tituloRotina', rotina);
+      FormBuilder.construirFormulario();
+      UI.mostrarTela('screenForm');
+    } catch (error) {
+      UI.showMessage(error.message || 'Não foi possível validar a rotina.');
+    }
   },
 
   enviar: async () => {
@@ -71,8 +87,10 @@ const App = {
   novaRotina: () => {
     App.state.rotina = '';
     App.state.competencia = '';
+    App.state.idRotina = '';
     App.elements.rotinaSelect.value = '';
     App.elements.competenciaSelect.value = '';
+    UI.clearMessage();
     FormBuilder.reset();
     UI.mostrarTela('screenSelect');
   },

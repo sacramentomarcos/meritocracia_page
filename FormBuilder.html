@@ -55,6 +55,7 @@ const FormBuilder = {
 
       resultados.push({
         id_empresa: empresa.substring(0, 3),
+        id_rotina: App.state.idRotina,
         rotina: App.state.rotina,
         competencia: App.state.competencia,
         status: radio.value,
@@ -81,6 +82,7 @@ const Api = {
   },
 
   salvarRotina: (dados) => Api.callServer('salvarRotina', dados),
+  validarRotina: (dados) => Api.callServer('validarRotinaNaCompetencia', dados),
 };
 
 const UI = {
@@ -105,6 +107,18 @@ const UI = {
     alert(message);
   },
 
+  showMessage: (message) => {
+    const element = UI.getById('validationMessage');
+    if (!element) {
+      return;
+    }
+
+    element.innerText = message || '';
+    element.style.display = message ? 'block' : 'none';
+  },
+
+  clearMessage: () => UI.showMessage(''),
+
   clearContainer: (element) => {
     if (element) {
       element.innerHTML = '';
@@ -113,24 +127,24 @@ const UI = {
 };
 
 const FRONTEND_CONSTANTS = {
-  ROTINAS: [
-    "DP - Fechamento do ponto no prazo",
-    "DP - Auditoria folha de pagamento",
-    "FINANCEIRO - Bilhetagem",
-    "FINANCEIRO - Entrega de caixas e bancos",
-    "FINANCEIRO - Notas vencidas",
-    "SUPRIMENTOS - Aferição de bomba",
-    "SUPRIMENTOS - Quebra de diesel mensal",
-    "SUPRIMENTOS - Aferição de tacógrafo",
-    "SUPRIMENTOS - Lançamento de notas no mês de competência",
-    "SUPRIMENTOS - Compra fora do contrato",
-    "SUPRIMENTOS - Solicitação de abertura de sistema ou correções",
-    "SUPRIMENTOS - Controle do P.P.A",
-    "PATRIMÔNIO - Entrega da movimentação do Ativo Imobilizado",
-    "PATRIMÔNIO - Entrega do controle de classificação da frota",
-    "RH - Realização de entrevistas de desligamento",
-    "CONTROLADORIA - Envio do Forecast com qualidade"
-  ],
+  ROTINAS: {
+    9 : "DP - Fechamento do ponto no prazo",
+    11: "DP - Auditoria folha de pagamento",
+    6: "FINANCEIRO - Bilhetagem",
+    10: "FINANCEIRO - Entrega de caixas e bancos",
+    3: "FINANCEIRO - Notas vencidas",
+    2: "SUPRIMENTOS - Aferição de bomba",
+    8: "SUPRIMENTOS - Quebra de diesel mensal",
+    7: "SUPRIMENTOS - Aferição de tacógrafo",
+    12: "SUPRIMENTOS - Lançamento de notas no mês de competência",
+    15: "SUPRIMENTOS - Compra fora do contrato",
+    1: "SUPRIMENTOS - Solicitação de abertura de sistema ou correções",
+    4: "SUPRIMENTOS - Controle do P.P.A",
+    14: "PATRIMÔNIO - Entrega da movimentação do Ativo Imobilizado",
+    0: "PATRIMÔNIO - Entrega do controle de classificação da frota",
+    13: "RH - Realização de entrevistas de desligamento",
+    5: "CONTROLADORIA - Envio do Forecast com qualidade"
+  },
   EMPRESAS: [
     '002 - VICOSA',
     '003 - RIO BRANCO',
@@ -214,9 +228,12 @@ const FRONTEND_CONSTANTS = {
 
 const Templates = {
   rotinaOptions: () => {
+    const rotinas = Object.entries(FRONTEND_CONSTANTS.ROTINAS)
+      .sort(([idA], [idB]) => Number(idA) - Number(idB));
+
     return [
       '<option value="">Selecione...</option>',
-      ...FRONTEND_CONSTANTS.ROTINAS.map((rotina) => `<option value="${rotina}">${rotina}</option>`),
+      ...rotinas.map(([id, rotina]) => `<option value="${rotina}" data-id="${id}">${rotina}</option>`),
     ].join('');
   },
 
@@ -414,6 +431,5 @@ const Validation = {
     return null;
   },
 };
-
 
 </script>

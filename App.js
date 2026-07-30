@@ -130,6 +130,28 @@ function normalizarNomeCampo(valor) {
     .replace(/\s+/g, '_');
 }
 
+function obterEmailUsuario() {
+  try {
+    const emailAtivo = Session.getActiveUser().getEmail();
+    if (emailAtivo) {
+      return emailAtivo;
+    }
+  } catch (error) {
+    console.warn('Não foi possível obter o e-mail via Session.getActiveUser():', error);
+  }
+
+  try {
+    const emailEfetivo = Session.getEffectiveUser().getEmail();
+    if (emailEfetivo) {
+      return emailEfetivo;
+    }
+  } catch (error) {
+    console.warn('Não foi possível obter o e-mail via Session.getEffectiveUser():', error);
+  }
+
+  return '';
+}
+
 function obterValorCampo(item, nomes) {
   if (!item || typeof item !== 'object') {
     return '';
@@ -303,6 +325,11 @@ const RotinaService = {
    * @returns {Array} URLs dos arquivos salvos
    */
   processarCriacaoDePastas: (item) => {
+    //if (String(item.rotina).startsWith('DP')) {
+    //  Logger.log('Rotina do DP selecionada. Arquivo de evidência já postado no Drive');
+    //  return;
+    //};
+
     // 1. Obter pasta da unidade
     const pastaUnidade = RotinaService.obterPastaUnidade(item.id_empresa);
 
@@ -377,6 +404,7 @@ const SpreadsheetService = {
       item['id_rotina'] ||
       ''
     ).trim();
+    const emailUsuario = obterEmailUsuario();
 
     planilha.appendRow([
       agora,
@@ -387,6 +415,7 @@ const SpreadsheetService = {
       item.competencia || '',
       item.status,
       item.justificativa,
+      emailUsuario,
       urlsValidas.join('\n')
     ]); 
   }
@@ -493,7 +522,7 @@ function lerDadosComoObjetos() {
 
   const cabecalhos = temCabecalho
     ? primeiraLinha
-    : ['data', 'uuid', 'id_empresa', 'id_rotina', 'rotina', 'competencia', 'status', 'justificativa', 'evidencias'];
+    : ['data', 'uuid', 'id_empresa', 'id_rotina', 'rotina', 'competencia', 'status', 'justificativa', 'email_usuario', 'evidencias'];
 
   const linhas = temCabecalho ? dados.slice(1) : dados;
 

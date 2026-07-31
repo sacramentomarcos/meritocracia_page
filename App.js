@@ -285,17 +285,21 @@ const RotinaService = {
 
     dados.forEach((item) => {
       try {
-        const podecriarPastade = item.status === 'NAO' && item.arquivos && item.arquivos.length > 0;
+        const temJustificativa = Boolean(
+          item?.justificativa && String(item.justificativa).trim()
+        );
+        const temArquivos = Array.isArray(item?.arquivos) && item.arquivos.length > 0;
+        const podeCriarPasta = item.status === 'NAO' && (temArquivos || temJustificativa);
 
         let urlsArquivos = [];
 
-        if (podecriarPastade) {
-          // Lógica de criação de pastas APENAS se houver negativa com evidências
+        if (podeCriarPasta) {
+          // Lógica de criação de pastas para negativa com evidências ou justificativa
           urlsArquivos = RotinaService.processarCriacaoDePastas(item);
-        } else if (item.status === 'NAO' && (!item.arquivos || item.arquivos.length === 0)) {
-          // Se for negativa mas SEM evidências, apenas registra na planilha
+        } else if (item.status === 'NAO') {
+          // Se for negativa mas SEM evidências e sem justificativa, apenas registra na planilha
           console.warn(
-            `Unidade ${item.id_empresa} respondeu NÃO para rotina ${item.rotina} mas não anexou evidências. Nenhuma pasta será criada.`
+            `Unidade ${item.id_empresa} respondeu NÃO para rotina ${item.rotina} mas não anexou evidências nem informou justificativa. Nenhuma pasta será criada.`
           );
         } else if (item.status === 'SIM') {
           // Se for positiva, nenhuma pasta é criada
@@ -335,8 +339,32 @@ const RotinaService = {
     // 4. Criar ou obter pasta do setor dentro da pasta da competência
     const pastaSetor = DriveService.criarOuObterPasta(pastaCompetencia, setor);
 
-    // 5. Salvar arquivos dentro da pasta do setor
-    const urlsArquivos = DriveService.salvarArquivos(pastaSetor, item.arquivos || []);
+    const urlsArquivos = [];
+
+    // 5. Salvar anexos dentro da pasta do setor, quando houver
+    const temArquivos = Array.isArray(item?.arquivos) && item.arquivos.length > 0;
+    if (temArquivos) {
+      const urlsAnexos = DriveService.salvarArquivos(pastaSetor, item.arquivos || []);
+      urlsArquivos.push(...urlsAnexos);
+    }
+
+    // 6. Gerar PDF da justificativa na mesma pasta dos anexos, quando houver texto
+    const temJustificativa = Boolean(item?.justificativa && String(item.justificativa).trim());
+    if (temJustificativa) {
+      const urlJustificativa = salvarJustificativaPDF({
+        empresa: item.nm_empresa,
+        dataHora: new Date().toLocaleDateString('pt-BR'),
+        nomeRotina: item.rotina,
+        emailUsuario: obterEmailUsuario(),
+        idRotina: item.id_rotina,
+        justificativaTexto: String(item.justificativa).trim(),
+        idPastaDrive: pastaSetor.getId(),
+      });
+
+      if (urlJustificativa) {
+        urlsArquivos.push(urlJustificativa);
+      }
+    }
 
     Logger.log(
       `✓ Estrutura criada/reutilizada: ${item.id_empresa} → ${item.competencia} → ${setor} (${urlsArquivos.length} arquivos salvos)`
@@ -389,14 +417,7 @@ const SpreadsheetService = {
 
     const agora = new Date();
     const urlsValidas = (urlsArquivos || []).filter(Boolean);
-    const idRotina = String(
-      item.id_rotina ||
-      item.idrotina ||
-      item.id ||
-      item.rotina_id ||
-      item['id_rotina'] ||
-      ''
-    ).trim();
+    const idRotina = String(item.idRotina).trim();
     const emailUsuario = obterEmailUsuario();
 
     planilha.appendRow([
@@ -516,3 +537,223 @@ function lerDadosComoObjetos() {
   return dadosObjetos;
 }
 
+/**
+ * Gera um PDF formatado com a justificativa da rotina e o salva na pasta informada no Google Drive.
+ * 
+ * @param {Object} dados Objeto contendo os dados enviados pelo formulário.
+ * @return {GoogleAppsScript.Drive.File} O arquivo PDF gerado e salvo no Drive.
+ */
+function escaparHtml(texto) {
+  return String(texto || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function salvarJustificativaPDF(dados) {
+  try {
+    const dadosSeguros = {
+      empresa: escaparHtml(dados.empresa),
+      dataHora: escaparHtml(dados.dataHora),
+      nomeRotina: escaparHtml(dados.nomeRotina),
+      emailUsuario: escaparHtml(dados.emailUsuario),
+      idRotina: escaparHtml(dados.idRotina ),
+      justificativaTexto: escaparHtml(dados.justificativaTexto),
+    };
+
+    // 1. Estrutura HTML/CSS formatada com a identidade do Grupo CSC
+    var htmlContent = `
+      <!DOCTYPE html>
+      <html lang="pt-BR">
+      <head>
+        <meta charset="UTF-8">
+        <style>
+          @page {
+            size: A4;
+            margin: 15mm 12mm;
+            background-color: #f8fafc;
+          }
+          *, *::before, *::after {
+            box-sizing: border-box;
+          }
+          body {
+            font-family: Arial, Helvetica, sans-serif;
+            color: #1e293b;
+            margin: 0;
+            padding: 0;
+            font-size: 10pt;
+            line-height: 1.5;
+          }
+          .header-banner {
+            background-color: #0f2942;
+            color: #ffffff;
+            margin: -15mm -12mm 20px -12mm;
+            padding: 22px 20mm;
+            border-bottom: 4px solid #1d4ed8;
+          }
+          .header-table {
+            width: 100%;
+            border-collapse: collapse;
+          }
+          .brand-title {
+            font-size: 18pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 0;
+            color: #ffffff;
+          }
+          .brand-subtitle {
+            font-size: 8.5pt;
+            color: #93c5fd;
+            margin-top: 4px;
+            text-transform: uppercase;
+          }
+          .doc-badge {
+            background-color: #ef4444;
+            color: #ffffff;
+            padding: 5px 12px;
+            font-size: 8.5pt;
+            font-weight: bold;
+            border-radius: 4px;
+            text-transform: uppercase;
+            text-align: right;
+          }
+          .card {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 16px 20px;
+            margin-bottom: 16px;
+          }
+          .section-title {
+            font-size: 10.5pt;
+            font-weight: bold;
+            color: #0f2942;
+            margin-top: 0;
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid #e2e8f0;
+            text-transform: uppercase;
+          }
+          .info-table {
+            width: 100%;
+            border-collapse: collapse;
+          }
+          .info-table td {
+            padding: 6px 8px;
+            vertical-align: top;
+          }
+          .label {
+            font-weight: bold;
+            color: #64748b;
+            font-size: 8.5pt;
+            text-transform: uppercase;
+            width: 25%;
+          }
+          .value {
+            color: #0f172a;
+          }
+          .justification-box {
+            background-color: #fff8f8;
+            border-left: 4px solid #ef4444;
+            padding: 14px 16px;
+            border-radius: 0 6px 6px 0;
+            font-size: 10pt;
+            color: #334155;
+            white-space: pre-wrap;
+            line-height: 1.6;
+          }
+          .status-tag {
+            background-color: #fee2e2;
+            color: #991b1b;
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 8.5pt;
+          }
+          .footer {
+            margin-top: 30px;
+            padding-top: 12px;
+            border-top: 1px solid #cbd5e1;
+            text-align: center;
+            font-size: 8pt;
+            color: #94a3b8;
+          }
+        </style>
+      </head>
+      <body>
+
+        <div class="header-banner">
+          <table class="header-table">
+            <tr>
+              <td>
+                <div class="brand-title">Grupo CSC</div>
+                <div class="brand-subtitle">Sistema de Gestão de Rotinas Operacionais</div>
+              </td>
+              <td style="text-align: right;">
+                <span class="doc-badge">Relatório de Negativa</span>
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Informações do Registro</div>
+          <table class="info-table">
+            <tr>
+              <td class="label">Empresa / Unidade:</td>
+              <td class="value">${dadosSeguros.empresa}</td>
+              <td class="label">Data / Hora:</td>
+              <td class="value">${dadosSeguros.dataHora}</td>
+            </tr>
+            <tr>
+              <td class="label">Nome da Rotina:</td>
+              <td class="value"><strong>${dadosSeguros.nomeRotina}</strong></td>
+              <td class="label">Status Declarado:</td>
+              <td class="value"><span class="status-tag">NÃO REALIZADO</span></td>
+            </tr>
+            <tr>
+              <td class="label">E-mail - Responsável:</td>
+              <td class="value">${dadosSeguros.emailUsuario}</td>
+            </tr>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Justificativa do Gestor</div>
+          <div class="justification-box">${dadosSeguros.justificativaTexto}</div>
+        </div>
+
+        <div class="footer">
+          Documento gerado automaticamente pelo Sistema de Rotinas Grupo CSC • Registrado em ${dadosSeguros.dataHora}
+        </div>
+
+      </body>
+      </html>
+    `;
+
+    // 2. Converte o HTML em um objeto PDF
+    var htmlOutput = HtmlService.createHtmlOutput(htmlContent);
+
+    // Limpa o nome da rotina para não ter caracteres inválidos no nome do arquivo
+    var nomeLimpo = String(dados?.nomeRotina || 'Rotina')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9_-]/g, '_');
+    var nomeArquivo = 'Justificativa_' + nomeLimpo + '_' + String(dados.dataHora).replace(/[/ :]/g, '-') + '.pdf';
+
+    var pdfBlob = htmlOutput.getAs('application/pdf').setName(nomeArquivo);
+
+    // 3. Salva o arquivo na pasta destino do Google Drive
+    var pastaDrive = DriveApp.getFolderById(dados?.idPastaDrive);
+    var arquivoCriado = pastaDrive.createFile(pdfBlob);
+
+    return arquivoCriado.getUrl();
+  } catch (error) {
+    console.error('Erro ao gerar o PDF da justificativa:', error);
+    return '';
+  }
+}

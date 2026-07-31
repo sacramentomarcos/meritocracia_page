@@ -152,7 +152,7 @@ function obterEmailUsuario() {
   return '';
 }
 
-function obterValorCampo(item, nomes) {
+function obterValorCampo(item, nome) {
   if (!item || typeof item !== 'object') {
     return '';
   }
@@ -164,23 +164,27 @@ function obterValorCampo(item, nomes) {
     mapaNormalizado[normalizarNomeCampo(chave)] = item[chave];
   });
 
-  for (const nome of nomes) {
-    const nomeNormalizado = normalizarNomeCampo(nome);
+  const nomeNormalizado = normalizarNomeCampo(nome);
 
-    if (Object.prototype.hasOwnProperty.call(item, nome)) {
-      const valor = item[nome];
-      if (valor !== undefined && valor !== null && String(valor).trim() !== '') {
-        return String(valor).trim();
-      }
-    }
+  return String(item[nomeNormalizado]).trim()
+  
+  // for (const nome of nomes) {
+  //   const nomeNormalizado = normalizarNomeCampo(nome);
 
-    if (Object.prototype.hasOwnProperty.call(mapaNormalizado, nomeNormalizado)) {
-      const valor = mapaNormalizado[nomeNormalizado];
-      if (valor !== undefined && valor !== null && String(valor).trim() !== '') {
-        return String(valor).trim();
-      }
-    }
-  }
+  //   if (Object.prototype.hasOwnProperty.call(item, nome)) {
+  //     const valor = item[nome];
+  //     if (valor !== undefined && valor !== null && String(valor).trim() !== '') {
+  //       return String(valor).trim();
+  //     }
+  //   }
+
+    // if (Object.prototype.hasOwnProperty.call(mapaNormalizado, nomeNormalizado)) {
+  //     const valor = mapaNormalizado[nomeNormalizado];
+  //     if (valor !== undefined && valor !== null && String(valor).trim() !== '') {
+  //       return String(valor).trim();
+  //     }
+  //   }
+  // }
 
   return '';
 }
@@ -220,12 +224,12 @@ const RotinaService = {
       return '';
     }
 
-    const idRotina = obterValorCampo(item, ['id_rotina', 'idrotina', 'idRotina', 'rotina_id', 'rotinaId', 'id'])
+    const idRotina = obterValorCampo(item, 'id_rotina')
       .trim()
       .toLowerCase();
 
     const competencia = normalizarCompetencia(
-      obterValorCampo(item, ['competencia', 'Competencia', 'competenciaSelecionada'])
+      obterValorCampo(item, 'competencia')
     ).toLowerCase();
 
     if (!idRotina || !competencia) {
@@ -255,13 +259,6 @@ const RotinaService = {
       .filter(Boolean)));
 
     const jaExiste = chavesExistentes.includes(chaveAtual);
-
-    Logger.log('chaveAtual')
-    Logger.log(chaveAtual)
-    Logger.log('chavesExistentes')
-    Logger.log(chavesExistentes)
-    Logger.log('jaExiste')
-    Logger.log(jaExiste)
 
     return {
       sucesso: true,
@@ -325,10 +322,6 @@ const RotinaService = {
    * @returns {Array} URLs dos arquivos salvos
    */
   processarCriacaoDePastas: (item) => {
-    //if (String(item.rotina).startsWith('DP')) {
-    //  Logger.log('Rotina do DP selecionada. Arquivo de evidência já postado no Drive');
-    //  return;
-    //};
 
     // 1. Obter pasta da unidade
     const pastaUnidade = RotinaService.obterPastaUnidade(item.id_empresa);
@@ -407,17 +400,17 @@ const SpreadsheetService = {
     const emailUsuario = obterEmailUsuario();
 
     planilha.appendRow([
-      agora,
       Utilities.getUuid(),
-      item.id_empresa,
+      agora,
+      `'${item.id_empresa}`,
       idRotina,
       item.rotina,
-      item.competencia || '',
+      item.competencia,
       item.status,
       item.justificativa,
       emailUsuario,
       urlsValidas.join('\n')
-    ]); 
+    ]);
   }
 };
 
@@ -441,6 +434,26 @@ const ValidationService = {
   },
 };
 
+function empresasNaPasta() {
+  const parentFolderId = '1AylbJYSnMdzRGICd4VBiRsY5CoQuWUQl';
+  try {
+    let parentFolder = DriveApp.getFolderById(parentFolderId);
+    let childFolders = parentFolder.getFolders();
+    let empresasPastasIds = {};
+
+    while (childFolders.hasNext()) {
+      let folder = childFolders.next();
+      let chave = String(folder.getName()).substring(0, 3);
+      // { id_empresa : folderId }
+      empresasPastasIds[chave] = folder.getId();
+    }
+    Logger.log(empresasPastasIds);
+    return empresasPastasIds;
+  } catch (e) {
+    Logger.log('Erro ao buscar as pastas: ' + e.toString());
+  }
+}
+
 const CONFIG = {
   // ID da pasta raiz do projeto (se necessário para outros fins)
   DRIVE_FOLDER_ID: '1tb9tcnmpeNm2NHZLBcOOYMy8ldksppKg',
@@ -449,44 +462,7 @@ const CONFIG = {
   SPREADSHEET_ID: '1eAMoLMG415cqMo_pWwIcieaKAjJ0Sew-rHiGAIZvfh0',
   SPREADSHEET_URL: 'https://docs.google.com/spreadsheets/d/1eAMoLMG415cqMo_pWwIcieaKAjJ0Sew-rHiGAIZvfh0',
 
-  /**
-   * Mapear cada unidade com seu ID no Google Drive
-   * Formato: { 'ID_EMPRESA': 'FOLDER_ID_NO_DRIVE' }
-   * 
-   * TODO: Preencer com os IDs reais do Drive de cada unidade
-   * Exemplo: '002': '1aBcDeFgHiJkLmNoPqRsTuVwXyZ...'
-   */
-  EMPRESAS_DRIVE_IDS: {
-    '002': '1jcF2oQ0SGcHHDclWUHUAWaVvGN0GwjeQ',
-    '003': '1M5Ix7TEr30_lPcY_XLKRh_hE7irAnRbk',
-    '004': '1ziVAzs9rVJHY3nfwjFCJvnE5pAa8vDgR',
-    '005': '10-H2JjBJTH1iSAVwRfT5XY2UgJq8-eDW',
-    '009': '1uJUE3RbznbVqeG0GB0qfSQBZadNyjOCD',
-    '011': '1QiRScGjnAPOu8S1UHGN1jAPS4f_X7WUw',
-    '012': '1FqqplV1krfoyKlivUSy5MAqwdOYMCyua',
-    '015': '1R6Yfm8ObePfWSQgiAes_GEqBmIlWMCf5',
-    '022': '1zmxNXUaZuN6cySAODHaJEfp13Z1ISuhq',
-    '027': '17FPYGYeE3YgUFPMm5Exo_jvfavHCAYRd',
-    '030': '12kOolBd_u76WrFk7pKcW8h7UN22ZgJsr',
-    '034': '1Hk9nc-fEIAEsxK00UjSOKhM0TtqTqqpX',
-    '035': '1sbr9U0nSRchrHNrfReOsm_d92tdzRKDy',
-    '038': '1GzOj2OIZBNpc60zM8zApphGlV9GXjyA3',
-    '046': '1NNIXsgX73KDJSXwh6aJaWh4ztA_XUrLK',
-    '049': '1IBm--ljn07co3DtHRMkm3868NiJz4l5O',
-    '055': '1bssCVS2yNdC2RLBhDk4CAttiibOL8WWd',
-    '059': '1sYDU-LSWwm4nHLCix2SlkA7ujWWxENT0',
-    '062': '1CMqf7LnQ1SNaxPcW-eNzwdzxLldaFOLR',
-    '063': '1nhjC0I1FSmx_VhLnT1zLIcWuLu81nZtt',
-    '064': '10lGi8TcTJYycdodZhM0seyiApuftVVUp',
-    '067': '18pcCuO3xEwvr8Zmofup_mwwzQ75cQncm',
-    '074': '17iUi-6pU4ThfdCguV2inNt3THCPS6zlV',
-    '075': '1oQa9hRgHCtTKbj_7HMpHR5u4VK9fkHk6',
-    '080': '11MSdtW9-MwEohpDDGShaOx7MDR79BSur',
-    '084': '1uCh3ESepUVcwTN9HBmkdig1W84AXIbeh',
-    '085': '1Skq-jEUeH7FJ-zwmWuFGRfiZH9R3N8Xh',
-    '089': '185zJ7_AMBn4tPOmJbYWGoNXXgHyqooI2',
-    '098': '1kLM51yRn7EJEHjaCKTAtMfUGyD6wVYF1',
-  },
+  EMPRESAS_DRIVE_IDS: empresasNaPasta(),
 };
 
 
